@@ -73,7 +73,7 @@ haloPlugin {
         ]
         generator {
             // 指定 API 客户端代码的输出目录如 console 或 ui
-            outputDir = file("${projectDir}/console/src/api/generated")
+            outputDir = file("${projectDir}/ui/src/api/generated")
         }
     }
 }

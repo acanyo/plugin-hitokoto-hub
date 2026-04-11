@@ -6,6 +6,7 @@ import RiCodeBoxLine from '~icons/ri/code-box-line'
 import RiBookReadLine from '~icons/ri/book-read-line'
 import RiComputerLine from '~icons/ri/computer-line'
 import RiArrowRightSLine from '~icons/ri/arrow-right-s-line'
+import {sentenceCoreApiClient,categoryCoreApiClient} from '@/api'
 
 onMounted(() => {
   confetti({
@@ -14,12 +15,17 @@ onMounted(() => {
     origin: { y: 0.6, x: 0.58 },
   })
 })
+const getCategory = async () => {
+  const res = await categoryCoreApiClient.category.listCategory()
+  console.log(res)
+}
 </script>
 
 <template>
   <section id="plugin-starter">
     <div class="wrapper">
-      <span class="title"> 你已经成功运行起了插件！ </span>
+      <span class="title text-2xl font-bold text-gray-900"> 你已经成功运行起了插件！ </span>
+      <button class="text-xl h-1.5" @click="getCategory">获取分类</button>
       <span class="message">你可以点击下方文档继续下一步</span>
       <div class="docs">
         <a
@@ -72,6 +78,7 @@ onMounted(() => {
 </template>
 
 <style lang="scss" scoped>
+@import 'tailwindcss';
 #plugin-starter {
   height: 100vh;
   background-color: #f8fafc;

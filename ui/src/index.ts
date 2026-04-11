@@ -12,10 +12,10 @@ export default definePlugin({
         name: 'Hitokoto',
         component: () => import(/* webpackChunkName: "HomeView" */ './views/HomeView.vue'),
         meta: {
-          title: '一言数据中心',
+          title: '一言管理',
           searchable: true,
           menu: {
-            name: '一言数据中心',
+            name: '一言管理',
             icon: markRaw(IconPlug),
             priority: 0,
           },
