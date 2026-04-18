@@ -55,9 +55,13 @@ public class SentenceEndpoint implements CustomEndpoint {
         return request.bodyToFlux(Sentence.class)
             .doOnNext(this::initMetadata)
             .flatMap(sentence -> client.create(sentence)
-                .doOnSuccess(s -> success.incrementAndGet()) // 成功+1
+                .doOnSuccess(s -> {
+                    success.incrementAndGet();  // 成功+1
+                    total.incrementAndGet();  // 总数+1
+                }) // 成功+1
                 .onErrorResume(e -> {
                     failed.incrementAndGet(); // 失败+1
+                    total.incrementAndGet();  // 总数+1
                     return Mono.empty(); // 出错不中断整个批量
                 })).then(Mono.fromCallable(() -> {
                 BatchResult result = new BatchResult();
