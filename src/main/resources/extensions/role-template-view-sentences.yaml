@@ -1,0 +1,14 @@
+apiVersion: v1alpha1
+kind: Role
+metadata:
+  name: hitokoto-hub-public-sentence-role
+  labels:
+    halo.run/role-template: "true"
+    rbac.authorization.halo.run/aggregate-to-anonymous: "true"
+  annotations:
+    rbac.authorization.halo.run/module: "Hitokoto Hub"
+    rbac.authorization.halo.run/display-name: "公开句子查看"
+rules:
+  - apiGroups: [ "api.hitokotohub.puresky.top" ]
+    resources: [ "sentences" ]
+    verbs: [ "get", "list" ]

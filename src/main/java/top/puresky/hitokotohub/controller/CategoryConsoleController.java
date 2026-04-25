@@ -1,4 +1,4 @@
 package top.puresky.hitokotohub.controller;
 
-public class CategoryController {
+public class CategoryConsoleController {
 }

@@ -25,7 +25,7 @@ import top.puresky.hitokotohub.extension.Sentence;
 @RequiredArgsConstructor
 @Tag(name = "OverviewV1alpha1")
 @Slf4j
-public class OverviewController {
+public class OverviewConsoleController {
     private final ReactiveExtensionClient client;
 
     @GetMapping("")

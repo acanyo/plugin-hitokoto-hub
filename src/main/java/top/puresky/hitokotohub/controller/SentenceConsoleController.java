@@ -23,7 +23,7 @@ import top.puresky.hitokotohub.extension.Sentence;
 @RestController
 @RequiredArgsConstructor
 @Tag(name = "SentenceV1alpha1")
-public class SentenceController {
+public class SentenceConsoleController {
 
     private final ReactiveExtensionClient client;
     private final RoleService roleService;
