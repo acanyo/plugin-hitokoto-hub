@@ -17,25 +17,25 @@
 /**
  * 
  * @export
- * @interface BatchResult
+ * @interface BatchCreateSentenceResult
  */
-export interface BatchResult {
+export interface BatchCreateSentenceResult {
     /**
      * 
      * @type {number}
-     * @memberof BatchResult
+     * @memberof BatchCreateSentenceResult
      */
     'failed'?: number;
     /**
      * 
      * @type {number}
-     * @memberof BatchResult
+     * @memberof BatchCreateSentenceResult
      */
     'success'?: number;
     /**
      * 
      * @type {number}
-     * @memberof BatchResult
+     * @memberof BatchCreateSentenceResult
      */
     'total'?: number;
 }

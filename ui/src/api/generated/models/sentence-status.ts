@@ -27,6 +27,12 @@ export interface SentenceStatus {
      */
     'likeCount'?: number;
     /**
+     * 
+     * @type {boolean}
+     * @memberof SentenceStatus
+     */
+    'published'?: boolean;
+    /**
      * 浏览量
      * @type {number}
      * @memberof SentenceStatus

@@ -3,6 +3,8 @@
 .openapi-generator-ignore
 api.ts
 api/category-v1alpha1-api.ts
+api/overview-v1alpha1-api.ts
+api/sentence-public-v1alpha1-api.ts
 api/sentence-v1alpha1-api.ts
 base.ts
 common.ts
@@ -10,7 +12,8 @@ configuration.ts
 git_push.sh
 index.ts
 models/add-operation.ts
-models/batch-result.ts
+models/batch-create-sentence-result.ts
+models/category-distribution.ts
 models/category-list.ts
 models/category-spec.ts
 models/category-status.ts
@@ -20,8 +23,11 @@ models/index.ts
 models/json-patch-inner.ts
 models/metadata.ts
 models/move-operation.ts
+models/overview-response.ts
+models/random-sentence-response.ts
 models/remove-operation.ts
 models/replace-operation.ts
+models/sentence-item.ts
 models/sentence-list.ts
 models/sentence-spec.ts
 models/sentence-status.ts

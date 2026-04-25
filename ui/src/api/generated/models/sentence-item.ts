@@ -15,40 +15,46 @@
 
 
 /**
- * 
+ * 句子列表
  * @export
- * @interface SentenceSpec
+ * @interface SentenceItem
  */
-export interface SentenceSpec {
+export interface SentenceItem {
     /**
      * 作者
      * @type {string}
-     * @memberof SentenceSpec
+     * @memberof SentenceItem
      */
     'author'?: string;
     /**
-     * 分类名称
+     * 内容
      * @type {string}
-     * @memberof SentenceSpec
+     * @memberof SentenceItem
      */
-    'categoryName': string;
+    'content'?: string;
     /**
-     * 句子内容
+     * 创建者
      * @type {string}
-     * @memberof SentenceSpec
-     */
-    'content': string;
-    /**
-     * 创建用户
-     * @type {string}
-     * @memberof SentenceSpec
+     * @memberof SentenceItem
      */
     'createdBy'?: string;
     /**
+     * 点赞数
+     * @type {number}
+     * @memberof SentenceItem
+     */
+    'likeCount'?: number;
+    /**
      * 来源
      * @type {string}
-     * @memberof SentenceSpec
+     * @memberof SentenceItem
      */
     'source'?: string;
+    /**
+     * 浏览数
+     * @type {number}
+     * @memberof SentenceItem
+     */
+    'viewCount'?: number;
 }
 
