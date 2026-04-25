@@ -33,14 +33,17 @@ public class Sentence extends AbstractExtension {
 
         @Schema(description = "来源", maxLength = 100, defaultValue = "未知")
         private String source = "未知";
+
+        @Schema(description = "创建用户")
+        private String createdBy;
     }
 
     @Data
     @Schema(name = "SentenceStatus")
     public static class Status {
 
-        @Schema(description = "是否发布", defaultValue = "true")
-        private boolean isPublished = true;
+        @Schema(description = "是否发布", defaultValue = "false")
+        private boolean isPublished = false;
 
         @Schema(description = "点赞数", defaultValue = "0")
         private long likeCount = 0;
