@@ -5,6 +5,11 @@
         <div class="flex w-full bg-gray-50 px-4 py-3">
           <div class="flex w-full flex-1 items-center gap-6 sm:w-auto">
             <VSpace spacing="lg" class=":uno: flex-wrap">
+              <!-- 搜索框 -->
+              <SearchInput
+                      v-model="keyword"
+                      @keyup.enter="handleSearch"
+              />
               <FilterCleanButton
                       v-if="hasFilters"
                       @click="handleClearFilters"
@@ -52,8 +57,7 @@
       />
 
       <VEntityContainer v-else>
-        <VEntity v-for="sentence in sentences"
-                 :key="sentence.metadata.name">
+        <VEntity v-for="sentence in sentences" :key="sentence.metadata.name">
           <template #start>
             <div class="w-full min-w-0">
               <div class="text-sm font-medium text-gray-900"
@@ -61,15 +65,15 @@
                 {{ sentence.spec.content }}
               </div>
               <div class="mt-1.5 flex flex-wrap items-center gap-1.5">
-                <span class="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs text-gray-600">作者：{{
-                    sentence.spec.author || '匿名'
-                  }}</span>
-                <span class="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs text-gray-600">来源：{{
-                    sentence.spec.source || '未知'
-                  }}</span>
-                <span class="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs text-gray-600">分类：{{
-                    getCategoryName(sentence.spec.categoryName)
-                  }}</span>
+                <span class="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs text-gray-600">
+                  作者：{{ sentence.spec.author || '匿名' }}
+                </span>
+                <span class="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs text-gray-600">
+                  来源：{{ sentence.spec.source || '未知' }}
+                </span>
+                <span class="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs text-gray-600">
+                  分类：{{ getCategoryName(sentence.spec.categoryName) }}
+                </span>
               </div>
             </div>
           </template>
@@ -77,11 +81,11 @@
             <VEntityField>
               <template #description>
                 <div class="flex items-center gap-1.5">
-        <span
-                v-if="isDeleting(sentence)"
-                class="inline-block h-2 w-2 rounded-full bg-red-500 animate-pulse"
-                v-tooltip="'删除中'"
-        />
+                  <span
+                          v-if="isDeleting(sentence)"
+                          class="inline-block h-2 w-2 rounded-full bg-red-500 animate-pulse"
+                          v-tooltip="'删除中'"
+                  />
                   <VTag :theme="sentence.status?.published ? 'primary' : 'default'">
                     {{ sentence.status?.published ? '已发布' : '未发布' }}
                   </VTag>
@@ -349,6 +353,7 @@ import type {BatchCreateSentenceResult, Category, Sentence} from '@/api/generate
 const page = ref(1)
 const size = ref(20)
 const total = ref(0)
+const keyword = ref('')
 const loading = ref(false)
 const sentences = ref<Sentence[]>([])
 const categories = ref<Category[]>([])
@@ -499,7 +504,7 @@ const startPolling = () => {
 
 const stopPolling = () => {
   if (pollingTimer) {
-    clearInterval(pollingTimer);
+    clearInterval(pollingTimer)
     pollingTimer = null
   }
 }
@@ -532,29 +537,83 @@ const fetchSentences = async () => {
   }
 }
 
-const refreshData = () => {
-  fetchSentences()
+// 监听 keyword 清空时恢复列表
+watch(keyword, (newVal) => {
+  if (!newVal.trim()) {
+    page.value = 1
+    fetchSentences()
+  }
+})
+
+// 搜索句子
+// 搜索句子
+const handleSearch = async () => {
+  if (!keyword.value.trim()) {
+    page.value = 1
+    await fetchSentences()
+    return
+  }
+  loading.value = true
+  try {
+    const { data } = await sentenceCoreApiClient.sentence.searchSentence({
+      keyword: keyword.value,
+      categoryName: selectedCategory.value || undefined,
+    })
+    sentences.value = (data as unknown as Sentence[]) || []
+    total.value = sentences.value.length
+  } catch (e) {
+    console.error('搜索失败', e)
+    Toast.error('搜索句子失败')
+  } finally {
+    loading.value = false
+  }
 }
 
-const handleClearFilters = () => {
+const refreshData = () => {
+  keyword.value = ''
   selectedCategory.value = undefined
   selectedSort.value = undefined
   page.value = 1
   fetchSentences()
 }
 
+const handleClearFilters = () => {
+  selectedCategory.value = undefined
+  selectedSort.value = undefined
+  keyword.value = ''
+  page.value = 1
+  fetchSentences()
+}
+
 const hasFilters = computed(() => {
-  return selectedCategory.value || selectedSort.value
+  return selectedCategory.value || selectedSort.value || keyword.value
 })
 
-watch(page, () => fetchSentences())
-watch(size, () => {
-  page.value = 1;
-  fetchSentences()
+// 分页和筛选变化时，根据是否有搜索关键词决定调用哪个方法
+watch(page, () => {
+  if (keyword.value.trim()) {
+    handleSearch()
+  } else {
+    fetchSentences()
+  }
 })
+
+watch(size, () => {
+  page.value = 1
+  if (keyword.value.trim()) {
+    handleSearch()
+  } else {
+    fetchSentences()
+  }
+})
+
 watch([selectedCategory, selectedSort], () => {
-  page.value = 1;
-  fetchSentences()
+  page.value = 1
+  if (keyword.value.trim()) {
+    handleSearch()
+  } else {
+    fetchSentences()
+  }
 })
 
 const handleCreate = () => {
@@ -610,22 +669,27 @@ const handleSave = async () => {
           content: formData.value.content,
           categoryName: formData.value.categoryName,
           author: formData.value.author,
-          source: formData.value.source
+          source: formData.value.source,
         },
         status: {...editingOriginalSentence.value.status, published: formData.value.published},
       }
       await sentenceCoreApiClient.sentence.updateSentence({
         name: editingSentenceName.value,
-        sentence: updated
+        sentence: updated,
       })
       Toast.success('更新成功')
     } else {
-      const sentence = buildSentence(formData.value.content, formData.value.categoryName, formData.value.author, formData.value.source)
+      const sentence = buildSentence(
+              formData.value.content,
+              formData.value.categoryName,
+              formData.value.author,
+              formData.value.source
+      )
       await batchCreate([sentence])
       Toast.success('创建成功')
     }
     showFormModal.value = false
-    fetchSentences()
+    await fetchSentences()
   } catch (e) {
     console.error('保存失败', e)
     Toast.error(isEditing.value ? '更新失败' : '创建失败')
@@ -636,22 +700,23 @@ const handleSave = async () => {
 
 const handleBatchSave = async () => {
   if (!batchImportForm.value.categoryName) {
-    Toast.warning('请选择目标分类');
+    Toast.warning('请选择目标分类')
     return
   }
   if (parsedSentences.value.length === 0) {
-    Toast.warning('没有解析到有效的句子数据');
+    Toast.warning('没有解析到有效的句子数据')
     return
   }
 
   batchImporting.value = true
   try {
-    const sentenceList = parsedSentences.value.map(item =>
-            buildSentence(item.content, batchImportForm.value.categoryName, item.author, item.source))
+    const sentenceList = parsedSentences.value.map((item) =>
+            buildSentence(item.content, batchImportForm.value.categoryName, item.author, item.source)
+    )
     const result = await batchCreate(sentenceList)
     Toast.success(`导入完成！成功: ${result.success || 0}，失败: ${result.failed || 0}`)
     showBatchImportModal.value = false
-    fetchSentences()
+    await fetchSentences()
   } catch (e) {
     console.error('批量导入失败', e)
     Toast.error('批量导入失败')

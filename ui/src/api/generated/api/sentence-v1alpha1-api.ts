@@ -326,6 +326,56 @@ export const SentenceV1alpha1ApiAxiosParamCreator = function (configuration?: Co
             };
         },
         /**
+         *
+         * @summary 搜索句子
+         * @param {string} keyword
+         * @param {string} [categoryName]
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        searchSentence: async (keyword: string, categoryName?: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'keyword' is not null or undefined
+            assertParamExists('searchSentence', 'keyword', keyword)
+            const localVarPath = `/apis/console.api.hitokotohub.puresky.top/v1alpha1/sentence/search`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication basicAuth required
+            // http basic authentication required
+            setBasicAuthToObject(localVarRequestOptions, configuration)
+
+            // authentication bearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            if (keyword !== undefined) {
+                localVarQueryParameter['keyword'] = keyword;
+            }
+
+            if (categoryName !== undefined) {
+                localVarQueryParameter['categoryName'] = categoryName;
+            }
+
+
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
          * Update Sentence
          * @param {string} name Name of sentence
          * @param {Sentence} [sentence] Updated sentence
@@ -459,6 +509,20 @@ export const SentenceV1alpha1ApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
+         *
+         * @summary 搜索句子
+         * @param {string} keyword
+         * @param {string} [categoryName]
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async searchSentence(keyword: string, categoryName?: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<Sentence>>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.searchSentence(keyword, categoryName, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['SentenceV1alpha1Api.searchSentence']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
          * Update Sentence
          * @param {string} name Name of sentence
          * @param {Sentence} [sentence] Updated sentence
@@ -535,6 +599,16 @@ export const SentenceV1alpha1ApiFactory = function (configuration?: Configuratio
          */
         patchSentence(requestParameters: SentenceV1alpha1ApiPatchSentenceRequest, options?: RawAxiosRequestConfig): AxiosPromise<Sentence> {
             return localVarFp.patchSentence(requestParameters.name, requestParameters.jsonPatchInner, options).then((request) => request(axios, basePath));
+        },
+        /**
+         *
+         * @summary 搜索句子
+         * @param {SentenceV1alpha1ApiSearchSentenceRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        searchSentence(requestParameters: SentenceV1alpha1ApiSearchSentenceRequest, options?: RawAxiosRequestConfig): AxiosPromise<Array<Sentence>> {
+            return localVarFp.searchSentence(requestParameters.keyword, requestParameters.categoryName, options).then((request) => request(axios, basePath));
         },
         /**
          * Update Sentence
@@ -668,6 +742,27 @@ export interface SentenceV1alpha1ApiPatchSentenceRequest {
 }
 
 /**
+ * Request parameters for searchSentence operation in SentenceV1alpha1Api.
+ * @export
+ * @interface SentenceV1alpha1ApiSearchSentenceRequest
+ */
+export interface SentenceV1alpha1ApiSearchSentenceRequest {
+    /**
+     *
+     * @type {string}
+     * @memberof SentenceV1alpha1ApiSearchSentence
+     */
+    readonly keyword: string
+
+    /**
+     *
+     * @type {string}
+     * @memberof SentenceV1alpha1ApiSearchSentence
+     */
+    readonly categoryName?: string
+}
+
+/**
  * Request parameters for updateSentence operation in SentenceV1alpha1Api.
  * @export
  * @interface SentenceV1alpha1ApiUpdateSentenceRequest
@@ -760,6 +855,18 @@ export class SentenceV1alpha1Api extends BaseAPI {
      */
     public patchSentence(requestParameters: SentenceV1alpha1ApiPatchSentenceRequest, options?: RawAxiosRequestConfig) {
         return SentenceV1alpha1ApiFp(this.configuration).patchSentence(requestParameters.name, requestParameters.jsonPatchInner, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     *
+     * @summary 搜索句子
+     * @param {SentenceV1alpha1ApiSearchSentenceRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof SentenceV1alpha1Api
+     */
+    public searchSentence(requestParameters: SentenceV1alpha1ApiSearchSentenceRequest, options?: RawAxiosRequestConfig) {
+        return SentenceV1alpha1ApiFp(this.configuration).searchSentence(requestParameters.keyword, requestParameters.categoryName, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
