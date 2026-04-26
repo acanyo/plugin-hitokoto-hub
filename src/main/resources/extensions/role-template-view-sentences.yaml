@@ -12,5 +12,4 @@ metadata:
 rules:
   - apiGroups: [ "api.hitokotohub.puresky.top" ]
     resources: [ "sentence" ,"category" ]
-    resourceNames: [ "*" ]
-    verbs: [ "get","list" ]
+    verbs: [ "*" ]
