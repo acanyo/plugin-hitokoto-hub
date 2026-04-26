@@ -2,19 +2,25 @@ package top.puresky.hitokotohub.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import run.halo.app.core.user.service.RoleService;
+import run.halo.app.extension.ListOptions;
 import run.halo.app.extension.ReactiveExtensionClient;
+import run.halo.app.extension.index.query.Queries;
 import run.halo.app.plugin.ApiVersion;
 import top.puresky.hitokotohub.extension.Sentence;
 
@@ -63,6 +69,23 @@ public class SentenceConsoleController {
             result.setFailed(failed.get());
             return result;
         }));
+    }
+
+    @GetMapping("/search")
+    @Operation(summary = "搜索句子")
+    public Mono<List<Sentence>> searchSentence(@RequestParam(name = "keyword") String keyword,
+        @RequestParam(name = "categoryName", required = false) String categoryName) {
+        ListOptions options;
+        if (categoryName != null && !categoryName.isBlank()) {
+            options = ListOptions.builder().fieldQuery(
+                Queries.and(Queries.contains("spec.content", keyword),
+                    Queries.equal("spec.categoryName", categoryName))).build();
+        } else {
+            options =
+                ListOptions.builder().fieldQuery(Queries.contains("spec.content", keyword)).build();
+        }
+
+        return client.listAll(Sentence.class, options, Sort.unsorted()).collectList();
     }
 
     @Data

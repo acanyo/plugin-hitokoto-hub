@@ -42,6 +42,12 @@ public class HitokotoHubPlugin extends BasePlugin {
                     .nullable(false)
                     .build()
             );
+            sentenceIndexSpecs.add(
+                IndexSpecs.<Sentence, String>single("spec.content", String.class)
+                    .indexFunc(sentence -> sentence.getSpec().getContent())
+                    .nullable(false)
+                    .build()
+            );
         });
 
         schemeManager.register(Category.class);

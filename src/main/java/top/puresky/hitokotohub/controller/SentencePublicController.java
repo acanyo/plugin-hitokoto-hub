@@ -38,15 +38,14 @@ public class SentencePublicController {
         @Parameter(description = "分类名称，不传则返回所有类型")
         @RequestParam(name = "categoryName", required = false) String categoryName,
         @Parameter(description = "返回数量，默认8条，最多20条")
-        @RequestParam(name = "limit", defaultValue = "8") int limit
-    ) {
+        @RequestParam(name = "limit", defaultValue = "8") int limit) {
         int actualLimit = Math.min(limit, 20);
 
         ListOptions options;
         if (categoryName != null && !categoryName.isBlank()) {
-            options = ListOptions.builder()
-                .fieldQuery(Queries.equal("spec.categoryName", categoryName))
-                .build();
+            options = ListOptions.builder().fieldQuery(
+                Queries.and(Queries.equal("spec.categoryName", categoryName),
+                    Queries.equal("status.isPublished", true))).build();
         } else {
             options = ListOptions.builder().build();
         }
@@ -55,51 +54,42 @@ public class SentencePublicController {
         Mono<String> displayNameMono;
         if (categoryName != null && !categoryName.isBlank()) {
             displayNameMono = client.get(Category.class, categoryName)
-                .map(category -> category.getSpec().getName())
-                .defaultIfEmpty(categoryName);
+                .map(category -> category.getSpec().getName()).defaultIfEmpty(categoryName);
         } else {
             displayNameMono = Mono.just("全部");
         }
 
         // 并发查询句子和分类名
-        return Mono.zip(
-                client.listAll(Sentence.class, options, Sort.unsorted())
-                    .filter(sentence -> sentence.getMetadata().getDeletionTimestamp() == null)
-                    .filter(sentence -> sentence.getStatus() != null && sentence.getStatus().isPublished())
-                    .collectList(),
-                displayNameMono
-            )
-            .map(tuple -> {
-                List<Sentence> sentences = tuple.getT1();
-                String displayName = tuple.getT2();
+        return Mono.zip(client.listAll(Sentence.class, options, Sort.unsorted())
+            .filter(sentence -> sentence.getMetadata().getDeletionTimestamp() == null)
+            .filter(sentence -> sentence.getStatus() != null && sentence.getStatus().isPublished())
+            .collectList(), displayNameMono).map(tuple -> {
+            List<Sentence> sentences = tuple.getT1();
+            String displayName = tuple.getT2();
 
-                // 随机打乱
-                Collections.shuffle(sentences);
-                List<Sentence> result = sentences.stream()
-                    .limit(actualLimit)
-                    .toList();
+            // 随机打乱
+            Collections.shuffle(sentences);
+            List<Sentence> result = sentences.stream().limit(actualLimit).toList();
 
-                // 转换成 SentenceItem
-                List<SentenceItem> items = result.stream()
-                    .map(s -> {
-                        SentenceItem item = new SentenceItem();
-                        item.setAuthor(s.getSpec().getAuthor());
-                        item.setContent(s.getSpec().getContent());
-                        item.setSource(s.getSpec().getSource());
-                        item.setCreatedBy(s.getSpec().getCreatedBy());
-                        item.setLikeCount(s.getStatus() != null ? s.getStatus().getLikeCount() : 0);
-                        item.setViewCount(s.getStatus() != null ? s.getStatus().getViewCount() : 0);
-                        return item;
-                    })
-                    .toList();
+            // 转换成 SentenceItem
+            List<SentenceItem> items = result.stream().map(s -> {
+                SentenceItem item = new SentenceItem();
+                item.setAuthor(s.getSpec().getAuthor());
+                item.setContent(s.getSpec().getContent());
+                item.setSource(s.getSpec().getSource());
+                item.setCreatedBy(s.getSpec().getCreatedBy());
+                item.setLikeCount(s.getStatus() != null ? s.getStatus().getLikeCount() : 0);
+                item.setViewCount(s.getStatus() != null ? s.getStatus().getViewCount() : 0);
+                return item;
+            }).toList();
 
-                RandomSentenceResponse response = new RandomSentenceResponse();
-                response.setCategoryName(displayName);
-                response.setRequested(actualLimit);
-                response.setReturned(items.size());
-                response.setSentences(items);
-                return response;
-            });
+            RandomSentenceResponse response = new RandomSentenceResponse();
+            response.setCategoryName(displayName);
+            response.setRequested(actualLimit);
+            response.setReturned(items.size());
+            response.setSentences(items);
+            return response;
+        });
     }
 
     @Data
