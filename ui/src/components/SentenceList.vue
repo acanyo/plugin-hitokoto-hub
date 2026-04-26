@@ -59,16 +59,7 @@
           <template #start>
             <VEntityField>
               <template #title>
-                <div class="flex items-center gap-2">
-                  <span
-                          v-if="isDeleting(sentence)"
-                          class="inline-block h-2 w-2 rounded-full bg-red-500 animate-pulse"
-                          v-tooltip="'删除中'"
-                  />
-                  <span class="text-sm font-medium text-gray-900">
-                    {{ sentence.spec.content }}
-                  </span>
-                </div>
+                <span class="text-sm font-medium text-gray-900">{{ sentence.spec.content }}</span>
               </template>
               <template #description>
                 <div class="mt-1.5 flex flex-wrap items-center gap-1.5">
@@ -88,9 +79,16 @@
           <template #end>
             <VEntityField>
               <template #description>
-                <VTag :theme="sentence.status?.published ? 'primary' : 'default'">
-                  {{ sentence.status?.published ? '已发布' : '未发布' }}
-                </VTag>
+                <div class="flex items-center gap-1.5">
+        <span
+                v-if="isDeleting(sentence)"
+                class="inline-block h-2 w-2 rounded-full bg-red-500 animate-pulse"
+                v-tooltip="'删除中'"
+        />
+                  <VTag :theme="sentence.status?.published ? 'primary' : 'default'">
+                    {{ sentence.status?.published ? '已发布' : '未发布' }}
+                  </VTag>
+                </div>
               </template>
             </VEntityField>
             <VEntityField>
@@ -119,7 +117,12 @@
                   <VButton size="sm" type="default">操作</VButton>
                   <template #popper>
                     <VDropdownItem @click="handleEdit(sentence)">编辑</VDropdownItem>
-                    <VDropdownItem type="danger" @click="handleDelete(sentence)">删除
+                    <VDropdownItem
+                            v-if="!isDeleting(sentence)"
+                            type="danger"
+                            @click="handleDelete(sentence)"
+                    >
+                      删除
                     </VDropdownItem>
                   </template>
                 </VDropdown>
@@ -292,12 +295,12 @@
                     {{ item.content || '(无内容)' }}
                   </div>
                   <div class="mt-1 flex flex-wrap items-center gap-1.5">
-            <span class="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs text-gray-600">
-              作者：{{ item.author || '匿名' }}
-            </span>
                     <span class="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs text-gray-600">
-              来源：{{ item.source || '未知' }}
-            </span>
+                      作者：{{ item.author || '匿名' }}
+                    </span>
+                    <span class="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs text-gray-600">
+                      来源：{{ item.source || '未知' }}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -342,7 +345,7 @@ import {
   VTag,
 } from '@halo-dev/components'
 import {StarFilled, View} from '@element-plus/icons-vue'
-import {computed, onMounted, ref, watch} from 'vue'
+import {computed, onMounted, onUnmounted, ref, watch} from 'vue'
 import {categoryCoreApiClient, sentenceCoreApiClient} from '@/api'
 import type {BatchCreateSentenceResult, Category, Sentence} from '@/api/generated'
 
@@ -352,6 +355,9 @@ const total = ref(0)
 const loading = ref(false)
 const sentences = ref<Sentence[]>([])
 const categories = ref<Category[]>([])
+
+let pollingTimer: ReturnType<typeof setInterval> | null = null
+const POLLING_INTERVAL = 3000
 
 const categoryNameList = ref<{ label: string; value: string | undefined }[]>([
   {label: '全部', value: undefined},
@@ -390,13 +396,11 @@ const getCategoryName = (categoryId: string): string => {
 const availableKeys = computed(() => {
   const text = batchImportForm.value.jsonText.trim()
   if (!text) return []
-
   try {
     const parsed = JSON.parse(text)
     const data = Array.isArray(parsed) ? parsed : [parsed]
     const firstObject = data.find((item: any) => item && typeof item === 'object')
     if (!firstObject) return []
-
     return Object.keys(firstObject)
   } catch {
     return []
@@ -406,11 +410,9 @@ const availableKeys = computed(() => {
 const parsedSentences = computed(() => {
   const text = batchImportForm.value.jsonText.trim()
   if (!text) return []
-
   try {
     let data: any[] = []
     const parsed = JSON.parse(text)
-
     if (Array.isArray(parsed)) {
       data = parsed
     } else if (typeof parsed === 'object' && parsed !== null) {
@@ -437,8 +439,11 @@ const parsedSentences = computed(() => {
 })
 
 const isDeleting = (sentence: Sentence): boolean => {
-  const finalizers = sentence.metadata?.finalizers
-  return Array.isArray(finalizers) && finalizers.length > 0
+  return !!sentence.metadata?.deletionTimestamp
+}
+
+const hasDeletingItems = (): boolean => {
+  return sentences.value.some(s => isDeleting(s))
 }
 
 const categorySelectOptions = computed(() =>
@@ -464,18 +469,12 @@ const initCategories = async () => {
   }
 }
 
-const fetchSentences = async () => {
-  loading.value = true
+const fetchSentencesSilently = async () => {
   try {
-    const params: any = {
-      page: page.value,
-      size: size.value,
-    }
-
+    const params: any = {page: page.value, size: size.value}
     if (selectedCategory.value) {
       params.fieldSelector = [`spec.categoryName=${selectedCategory.value}`]
     }
-
     if (selectedSort.value) {
       params.sort = [selectedSort.value]
     }
@@ -483,6 +482,51 @@ const fetchSentences = async () => {
     const {data} = await sentenceCoreApiClient.sentence.listSentence(params)
     sentences.value = data.items || []
     total.value = data.total || 0
+
+    if (hasDeletingItems()) {
+      startPolling()
+    } else {
+      stopPolling()
+    }
+  } catch (e) {
+    console.error('Silent fetch failed', e)
+  }
+}
+
+const startPolling = () => {
+  if (pollingTimer) return
+  pollingTimer = setInterval(() => {
+    fetchSentencesSilently()
+  }, POLLING_INTERVAL)
+}
+
+const stopPolling = () => {
+  if (pollingTimer) {
+    clearInterval(pollingTimer);
+    pollingTimer = null
+  }
+}
+
+const fetchSentences = async () => {
+  loading.value = true
+  try {
+    const params: any = {page: page.value, size: size.value}
+    if (selectedCategory.value) {
+      params.fieldSelector = [`spec.categoryName=${selectedCategory.value}`]
+    }
+    if (selectedSort.value) {
+      params.sort = [selectedSort.value]
+    }
+
+    const {data} = await sentenceCoreApiClient.sentence.listSentence(params)
+    sentences.value = data.items || []
+    total.value = data.total || 0
+
+    if (hasDeletingItems()) {
+      startPolling()
+    } else {
+      stopPolling()
+    }
   } catch (e) {
     console.error('获取句子列表失败', e)
     Toast.error('加载句子列表失败')
@@ -546,18 +590,11 @@ const buildSentence = (content: string, categoryName: string, author?: string, s
   apiVersion: 'hitokotohub.puresky.top/v1alpha1',
   kind: 'Sentence',
   metadata: {generateName: 'sentence-', name: ''},
-  spec: {
-    content,
-    categoryName,
-    author: author || '匿名',
-    source: source || '未知',
-  },
+  spec: {content, categoryName, author: author || '匿名', source: source || '未知'},
 })
 
 const batchCreate = async (sentenceList: Sentence[]): Promise<BatchCreateSentenceResult> => {
-  const {data} = await sentenceCoreApiClient.sentence.batchCreateSentence({
-    sentence: sentenceList,
-  })
+  const {data} = await sentenceCoreApiClient.sentence.batchCreateSentence({sentence: sentenceList})
   return data as BatchCreateSentenceResult
 }
 
@@ -566,7 +603,6 @@ const handleSave = async () => {
     Toast.warning('请填写句子内容和分类')
     return
   }
-
   saving.value = true
   try {
     if (isEditing.value && editingOriginalSentence.value) {
@@ -577,25 +613,17 @@ const handleSave = async () => {
           content: formData.value.content,
           categoryName: formData.value.categoryName,
           author: formData.value.author,
-          source: formData.value.source,
+          source: formData.value.source
         },
-        status: {
-          ...editingOriginalSentence.value.status,
-          published: formData.value.published,
-        },
+        status: {...editingOriginalSentence.value.status, published: formData.value.published},
       }
       await sentenceCoreApiClient.sentence.updateSentence({
         name: editingSentenceName.value,
-        sentence: updated,
+        sentence: updated
       })
       Toast.success('更新成功')
     } else {
-      const sentence = buildSentence(
-              formData.value.content,
-              formData.value.categoryName,
-              formData.value.author,
-              formData.value.source
-      )
+      const sentence = buildSentence(formData.value.content, formData.value.categoryName, formData.value.author, formData.value.source)
       await batchCreate([sentence])
       Toast.success('创建成功')
     }
@@ -611,21 +639,18 @@ const handleSave = async () => {
 
 const handleBatchSave = async () => {
   if (!batchImportForm.value.categoryName) {
-    Toast.warning('请选择目标分类')
+    Toast.warning('请选择目标分类');
     return
   }
-
   if (parsedSentences.value.length === 0) {
-    Toast.warning('没有解析到有效的句子数据')
+    Toast.warning('没有解析到有效的句子数据');
     return
   }
 
   batchImporting.value = true
   try {
     const sentenceList = parsedSentences.value.map(item =>
-            buildSentence(item.content, batchImportForm.value.categoryName, item.author, item.source)
-    )
-
+            buildSentence(item.content, batchImportForm.value.categoryName, item.author, item.source))
     const result = await batchCreate(sentenceList)
     Toast.success(`导入完成！成功: ${result.success || 0}，失败: ${result.failed || 0}`)
     showBatchImportModal.value = false
@@ -663,6 +688,10 @@ const handleDelete = (sentence: Sentence) => {
       try {
         await sentenceCoreApiClient.sentence.deleteSentence({name: sentence.metadata.name})
         Toast.success('删除成功')
+        await fetchSentencesSilently()
+        if (hasDeletingItems()) {
+          startPolling()
+        }
       } catch (e) {
         console.error('删除失败', e)
         Toast.error('删除失败')
@@ -674,6 +703,10 @@ const handleDelete = (sentence: Sentence) => {
 onMounted(() => {
   initCategories()
   fetchSentences()
+})
+
+onUnmounted(() => {
+  stopPolling()
 })
 </script>
 
