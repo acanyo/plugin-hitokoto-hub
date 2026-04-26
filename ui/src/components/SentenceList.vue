@@ -52,29 +52,26 @@
       />
 
       <VEntityContainer v-else>
-        <VEntity
-                v-for="sentence in sentences"
-                :key="sentence.metadata.name"
-        >
+        <VEntity v-for="sentence in sentences"
+                 :key="sentence.metadata.name">
           <template #start>
-            <VEntityField>
-              <template #title>
-                <span class="text-sm font-medium text-gray-900">{{ sentence.spec.content }}</span>
-              </template>
-              <template #description>
-                <div class="mt-1.5 flex flex-wrap items-center gap-1.5">
-                  <span class="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs text-gray-600">
-                    作者：{{ sentence.spec.author || '匿名' }}
-                  </span>
-                  <span class="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs text-gray-600">
-                    来源：{{ sentence.spec.source || '未知' }}
-                  </span>
-                  <span class="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs text-gray-600">
-                    分类：{{ getCategoryName(sentence.spec.categoryName) }}
-                  </span>
-                </div>
-              </template>
-            </VEntityField>
+            <div class="w-full min-w-0">
+              <div class="text-sm font-medium text-gray-900"
+                   style="word-break: break-word; white-space: normal;">
+                {{ sentence.spec.content }}
+              </div>
+              <div class="mt-1.5 flex flex-wrap items-center gap-1.5">
+                <span class="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs text-gray-600">作者：{{
+                    sentence.spec.author || '匿名'
+                  }}</span>
+                <span class="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs text-gray-600">来源：{{
+                    sentence.spec.source || '未知'
+                  }}</span>
+                <span class="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs text-gray-600">分类：{{
+                    getCategoryName(sentence.spec.categoryName)
+                  }}</span>
+              </div>
+            </div>
           </template>
           <template #end>
             <VEntityField>
