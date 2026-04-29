@@ -825,12 +825,16 @@ watch(
           if (!interval) {
             return
           }
-          deletionRefetchTimer = setInterval(() => {
+          deletionRefetchTimer = setInterval(async () => {
             if (hasDeletingCategories.value) {
-              initCategories()
+              await initCategories()
             }
             if (hasDeletingSentences.value) {
-              fetchSentencesSilently()
+              await fetchSentencesSilently()
+            }
+            if (!hasDeletingSentences.value && !hasDeletingCategories.value) {
+              await initCategories()
+              stopDeletionRefetch()
             }
           }, interval)
         },
@@ -1105,8 +1109,7 @@ const handleExcelFileChange = async (event: Event) => {
     return
   }
 
-  const headers = rows[0].map((h: any) => String(h ?? ''))
-  excelColumns.value = headers
+  excelColumns.value = rows[0].map((h: any) => String(h ?? ''))
 }
 
 const handleSave = async () => {

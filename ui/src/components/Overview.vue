@@ -70,7 +70,7 @@
       </div>
 
       <!-- 图表区域 -->
-      <div class="grid grid-cols-2 gap-6 lg:grid-cols-2">
+      <div class="grid grid-cols-1 gap-6 charts-grid">
         <el-card class="custom-card">
           <template #header>
             <div class="flex items-center justify-between">
@@ -151,7 +151,7 @@ import {use} from 'echarts/core'
 import {BarChart, PieChart} from 'echarts/charts'
 import {GridComponent, LegendComponent, TitleComponent, TooltipComponent} from 'echarts/components'
 import {CanvasRenderer} from 'echarts/renderers'
-import {VCard} from "@halo-dev/components"
+import {VCard, VSpace} from "@halo-dev/components"
 import {overviewV1alpha1ApiClient} from "@/api"
 
 use([PieChart, BarChart, TitleComponent, TooltipComponent, LegendComponent, GridComponent, CanvasRenderer])
@@ -308,6 +308,11 @@ onMounted(() => {
 </script>
 
 <style scoped>
+@media (min-width: 1024px) {
+  .charts-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
 .custom-card {
   border-radius: 1rem;
   border: 1px solid #e5e7eb !important;

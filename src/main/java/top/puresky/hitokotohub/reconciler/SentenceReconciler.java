@@ -18,28 +18,34 @@ public class SentenceReconciler implements Reconciler<Reconciler.Request> {
 
     private final ExtensionClient client;
 
-
     @Override
     public Result reconcile(Request request) {
         client.fetch(Sentence.class, request.name()).ifPresent(sentence -> {
+            String categoryName = sentence.getSpec().getCategoryName();
+
+            client.fetch(Category.class, categoryName).ifPresentOrElse(
+                category -> {
+                    ListOptions options = ListOptions.builder()
+                        .fieldQuery(Queries.and(
+                            Queries.equal("spec.categoryName", categoryName),
+                            Queries.isNull("metadata.deletionTimestamp")
+                        ))
+                        .build();
+                    long count = client.countBy(Sentence.class, options);
+
+                    if (category.getStatus() == null) {
+                        category.setStatus(new Category.Status());
+                    }
+                    category.getStatus().setSentenceCount(count);
+                    client.update(category);
+                },
+                () -> client.delete(sentence)
+            );
+
             if (ExtensionOperator.isDeleted(sentence)) {
-                return;
+                sentence.getMetadata().setFinalizers(null);
+                client.update(sentence);
             }
-            // 获取当前句子的分类ID
-            String categoryMetadataName = sentence.getSpec().getCategoryName();
-            // 构建句子查询选项
-            ListOptions listSentenceOptions = ListOptions.builder()
-                .fieldQuery(Queries.equal("spec.categoryName", categoryMetadataName)).build();
-            // 更新相关分类下句子数量状态
-            client.fetch(Category.class, categoryMetadataName).ifPresentOrElse(category -> {
-                // 获取当前句子所属分类的数量
-                long sentenceCount = client.countBy(Sentence.class, listSentenceOptions);
-                if (category.getStatus() == null) {
-                    category.setStatus(new Category.Status());
-                }
-                category.getStatus().setSentenceCount(sentenceCount);
-                client.update(category);
-            }, () -> client.delete(sentence));
         });
         return Result.doNotRetry();
     }
