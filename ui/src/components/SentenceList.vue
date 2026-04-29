@@ -88,14 +88,15 @@
               <span class="category-nav__text">
                 <span class="category-nav__name">{{ category.spec.name }}</span>
                 <span class="category-nav__count flex items-center gap-1 flex-row">
-                  <VStatusDot v-if="isDeletingCategory(category)" v-bind="{state:'warning'}" />
+                  <VStatusDot v-if="isDeletingCategory(category)" v-bind="{state:'warning'}"/>
                   {{
                     isDeletingCategory(category)
                             ? '删除中'
                             : `${category.status?.sentenceCount ?? 0} 条句子`
                   }}</span>
               </span>
-                <span v-if="!isDeletingCategory(category) && canManage" class="category-nav__actions">
+                <span v-if="!isDeletingCategory(category) && canManage"
+                      class="category-nav__actions">
                 <button
                         v-tooltip="'编辑分类'"
                         class="category-nav__action"
@@ -162,7 +163,8 @@
                   <template #start>
                     <VEntityField max-width="700px">
                       <template #title>
-                    <span :title="sentence.spec.content" class="block truncate  whitespace-normal wrap-break-word text-sm font-medium text-gray-900">
+                    <span :title="sentence.spec.content"
+                          class="block truncate  whitespace-normal wrap-break-word text-sm font-medium text-gray-900">
                       {{ sentence.spec.content }}
                     </span>
                       </template>
@@ -834,6 +836,7 @@ watch(
             }
             if (!hasDeletingSentences.value && !hasDeletingCategories.value) {
               await initCategories()
+              await fetchSentencesSilently()
               stopDeletionRefetch()
             }
           }, interval)
@@ -1188,6 +1191,7 @@ const handleBatchSave = async () => {
     Toast.success(`导入完成！成功: ${result.success || 0}，失败: ${result.failed || 0}`)
     showBatchImportModal.value = false
     await fetchSentences()
+    await initCategories()
   } catch (e) {
     console.error('批量导入失败', e)
     Toast.error('批量导入失败')

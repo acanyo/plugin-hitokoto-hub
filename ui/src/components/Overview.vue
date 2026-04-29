@@ -151,7 +151,7 @@ import {use} from 'echarts/core'
 import {BarChart, PieChart} from 'echarts/charts'
 import {GridComponent, LegendComponent, TitleComponent, TooltipComponent} from 'echarts/components'
 import {CanvasRenderer} from 'echarts/renderers'
-import {VCard, VSpace} from "@halo-dev/components"
+import {VCard} from "@halo-dev/components"
 import {overviewV1alpha1ApiClient} from "@/api"
 
 use([PieChart, BarChart, TitleComponent, TooltipComponent, LegendComponent, GridComponent, CanvasRenderer])

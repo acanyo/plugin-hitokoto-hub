@@ -12,11 +12,11 @@ export default definePlugin({
         name: 'Hitokoto',
         component: () => import(/* webpackChunkName: "HomeView" */ './views/HomeView.vue'),
         meta: {
-          title: '一言管理',
+          title: '轻言管理',
           searchable: true,
           permissions: ['plugin:hitokoto-hub:view'],
           menu: {
-            name: '一言管理',
+            name: '轻言管理',
             icon: markRaw(IconPlug),
             priority: 0,
           },

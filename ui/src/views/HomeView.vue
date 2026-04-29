@@ -32,7 +32,7 @@ watch(
 </script>
 
 <template>
-  <VPageHeader title="一言数据管理">
+  <VPageHeader title="轻言数据管理">
     <template #icon> </template>
   </VPageHeader>
 
