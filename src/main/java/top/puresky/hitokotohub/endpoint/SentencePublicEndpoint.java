@@ -283,6 +283,7 @@ public class SentencePublicEndpoint implements CustomEndpoint {
 
     private SentenceItem toSentenceItem(Sentence s) {
         SentenceItem item = new SentenceItem();
+        item.setMetaName(s.getMetadata().getName());
         item.setAuthor(s.getSpec().getAuthor());
         item.setContent(s.getSpec().getContent());
         item.setSource(s.getSpec().getSource());
@@ -328,6 +329,8 @@ public class SentencePublicEndpoint implements CustomEndpoint {
     @Data
     @Schema(name = "SentenceItem")
     public static class SentenceItem {
+        @Schema(description = "MetaName")
+        private String metaName;
         @Schema(description = "作者")
         private String author;
         @Schema(description = "内容")

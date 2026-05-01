@@ -1,11 +1,16 @@
 package top.puresky.hitokotohub.finder.impl;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.RandomUtils;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 import run.halo.app.extension.ListOptions;
+import run.halo.app.extension.ListResult;
 import run.halo.app.extension.PageRequestImpl;
 import run.halo.app.extension.ReactiveExtensionClient;
 import run.halo.app.extension.index.query.Queries;
@@ -29,16 +34,45 @@ public class HitokotoFinderImpl implements HitokotoFinder {
             query = Queries.and(query, Queries.equal("spec.categoryName", categoryName));
         }
         var options = ListOptions.builder().fieldQuery(query).build();
-        return client.countBy(Sentence.class, options)
-            .filter(total -> total > 0)
+
+        return client.countBy(Sentence.class, options).filter(total -> total > 0)
             .flatMapMany(total -> {
-                int totalPages = (int) Math.ceil((double) total / actualSize);
-                int randomPage = RandomUtils.insecure().randomInt(1, totalPages + 1);
-                return client.listBy(Sentence.class, options,
-                        PageRequestImpl.of(randomPage, actualSize, Sort.unsorted()))
-                    .flatMapMany(result -> Flux.fromIterable(result.getItems()));
-            })
-            .map(this::toSentenceVo);
+                int totalInt = total.intValue();
+                int effectiveSize = Math.min(actualSize, totalInt);
+                int totalPages = (int) Math.ceil((double) totalInt / effectiveSize);
+                int page = RandomUtils.insecure().randomInt(1, totalPages + 1);
+
+                var pageRequest = PageRequestImpl.of(page, effectiveSize, Sort.unsorted());
+
+                return client.listBy(Sentence.class, options, pageRequest).map(ListResult::getItems)
+                    .flatMapMany(items -> {
+                        if (items.size() >= effectiveSize || total <= effectiveSize) {
+                            return Mono.just(items);
+                        }
+
+                        int remaining = effectiveSize - items.size();
+                        var wrapRequest = PageRequestImpl.of(1, remaining, Sort.unsorted());
+
+                        return client.listBy(Sentence.class, options, wrapRequest)
+                            .map(ListResult::getItems).map(wrapItems -> {
+                                List<Sentence> combined = new ArrayList<>(items);
+                                combined.addAll(wrapItems);
+                                return combined;
+                            });
+                    }).flatMap(items -> {
+                        List<Sentence> randomItems = new ArrayList<>(items);
+                        Collections.shuffle(randomItems,
+                            java.util.concurrent.ThreadLocalRandom.current());
+                        return Flux.fromIterable(randomItems).flatMap(sentence -> {
+                            if (sentence.getStatus() == null) {
+                                sentence.setStatus(new Sentence.Status());
+                            }
+                            sentence.getStatus()
+                                .setViewCount(sentence.getStatus().getViewCount() + 1);
+                            return client.update(sentence);
+                        }).thenMany(Flux.fromIterable(randomItems));
+                    });
+            }).map(this::toSentenceVo);
     }
 
     @Override

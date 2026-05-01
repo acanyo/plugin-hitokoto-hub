@@ -12,7 +12,6 @@ export * from './like-response';
 export * from './metadata';
 export * from './move-operation';
 export * from './overview-response';
-export * from './random-sentence-response';
 export * from './remove-operation';
 export * from './replace-operation';
 export * from './sentence';

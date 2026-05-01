@@ -5,7 +5,7 @@
     "version" : "2.24.1"
   },
   "servers" : [ {
-    "url" : "http://localhost:57822",
+    "url" : "http://localhost:51608",
     "description" : "Generated server url"
   } ],
   "security" : [ {
@@ -1185,6 +1185,10 @@
             "type" : "integer",
             "description" : "点赞数",
             "format" : "int64"
+          },
+          "metaName" : {
+            "type" : "string",
+            "description" : "MetaName"
           },
           "source" : {
             "type" : "string",

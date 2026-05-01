@@ -27,7 +27,6 @@ models/like-response.ts
 models/metadata.ts
 models/move-operation.ts
 models/overview-response.ts
-models/random-sentence-response.ts
 models/remove-operation.ts
 models/replace-operation.ts
 models/sentence-item.ts
