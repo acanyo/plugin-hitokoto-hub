@@ -2,10 +2,10 @@
   "openapi" : "3.0.1",
   "info" : {
     "title" : "Halo",
-    "version" : "2.23.2"
+    "version" : "2.24.1"
   },
   "servers" : [ {
-    "url" : "http://localhost:38626",
+    "url" : "http://localhost:57822",
     "description" : "Generated server url"
   } ],
   "security" : [ {
@@ -699,24 +699,24 @@
             "type" : "string"
           }
         }, {
-          "description" : "返回数量，默认8条，最多20条",
+          "description" : "返回数量，默认1条，最多20条",
           "in" : "query",
           "name" : "limit",
           "schema" : {
             "type" : "integer",
             "format" : "int32"
           }
+        }, {
+          "description" : "返回格式：json 返回 RandomSentenceResponse，text 返回纯文本（每行一句）",
+          "in" : "query",
+          "name" : "encode",
+          "schema" : {
+            "type" : "string"
+          }
         } ],
         "responses" : {
           "default" : {
-            "content" : {
-              "*/*" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/RandomSentenceResponse"
-                }
-              }
-            },
-            "description" : "default response"
+            "description" : "encode=json（默认）时返回 RandomSentenceResponse，encode=text 时返回 text/plain"
           }
         },
         "summary" : "随机获取句子",
@@ -1110,32 +1110,6 @@
           }
         }
       },
-      "RandomSentenceResponse" : {
-        "type" : "object",
-        "properties" : {
-          "categoryName" : {
-            "type" : "string",
-            "description" : "请求的分类名称"
-          },
-          "requested" : {
-            "type" : "integer",
-            "description" : "请求数量",
-            "format" : "int64"
-          },
-          "returned" : {
-            "type" : "integer",
-            "description" : "实际返回数量",
-            "format" : "int64"
-          },
-          "sentences" : {
-            "type" : "array",
-            "description" : "句子列表",
-            "items" : {
-              "$ref" : "#/components/schemas/SentenceItem"
-            }
-          }
-        }
-      },
       "RemoveOperation" : {
         "required" : [ "op", "path" ],
         "type" : "object",
@@ -1222,7 +1196,7 @@
             "format" : "int64"
           }
         },
-        "description" : "句子列表"
+        "description" : "句子完整信息"
       },
       "SentenceList" : {
         "required" : [ "first", "hasNext", "hasPrevious", "items", "last", "page", "size", "total", "totalPages" ],
